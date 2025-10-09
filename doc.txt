@@ -1,0 +1,1005 @@
+================================================================================
+                    ДОКУМЕНТАЦИЯ ДЛЯ FRONTEND РАЗРАБОТЧИКА
+                    Telegram Bot Admin Panel - React.js
+                    Версия API: 2.0.0
+================================================================================
+
+СОДЕРЖАНИЕ:
+1. Обзор проекта
+2. API Endpoints (полный список)
+3. Техническое задание для админки
+4. Структура данных
+5. Примеры React компонентов
+6. Рекомендации по реализации
+
+================================================================================
+1. ОБЗОР ПРОЕКТА
+================================================================================
+
+ОПИСАНИЕ:
+Веб-админка для управления Telegram ботом. Администраторы могут:
+- Просматривать все чаты с клиентами
+- Отвечать на сообщения клиентов
+- Видеть статус клиента (студент, абитуриент, родитель)
+- Отслеживать непрочитанные сообщения
+- Менять статус клиента
+- Делать массовую рассылку по группам
+
+ТЕХНОЛОГИИ:
+- Frontend: React.js
+- Backend: Python Flask REST API
+- База данных: MongoDB
+- Telegram Bot: python-telegram-bot
+
+API BASE URL: http://0.0.0.0:80/api
+
+================================================================================
+2. API ENDPOINTS (ПОЛНЫЙ СПИСОК)
+================================================================================
+
+------------------------
+2.1. СЛУЖЕБНЫЕ ENDPOINTS
+------------------------
+
+GET /api/health
+Описание: Проверка состояния API
+Параметры: нет
+Ответ:
+{
+  "success": true,
+  "message": "API работает",
+  "timestamp": "2025-10-09T22:45:40.938135"
+}
+
+GET /api/statuses
+Описание: Получить список всех доступных статусов клиентов
+Параметры: нет
+Ответ:
+{
+  "success": true,
+  "data": [
+    {"value": "student", "label": "Студент"},
+    {"value": "applicant", "label": "Абитуриент"},
+    {"value": "parent_student", "label": "Родитель студента"},
+    {"value": "parent_applicant", "label": "Родитель абитуриента"}
+  ]
+}
+
+GET /api/stats
+Описание: Получить общую статистику
+Параметры: нет
+Ответ:
+{
+  "success": true,
+  "data": {
+    "total_chats": 42,
+    "total_unread_messages": 15,
+    "status_distribution": {
+      "student": 20,
+      "applicant": 12,
+      "parent_student": 7,
+      "parent_applicant": 3
+    }
+  }
+}
+
+------------------------
+2.2. РАБОТА С ЧАТАМИ
+------------------------
+
+GET /api/chats
+Описание: Получить список всех чатов
+Параметры: нет
+Ответ:
+{
+  "success": true,
+  "data": [
+    {
+      "chat_id": 672621804,
+      "user_info": {
+        "user_id": 672621804,
+        "username": "nickly24",
+        "name": "Nikolay Pribysh",
+        "created_at": "2025-10-09T22:38:23.025809"
+      },
+      "status": "student",
+      "last_message": {
+        "text": "Привет!",
+        "timestamp": "2025-10-09T22:40:55.416813",
+        "from_user": true
+      },
+      "unread_count": 2,
+      "updated_at": "2025-10-09T22:40:55.500979"
+    }
+  ]
+}
+
+GET /api/chats/<chat_id>
+Описание: Получить полную историю чата
+Параметры: chat_id (integer) - ID чата
+Пример: GET /api/chats/672621804
+Ответ:
+{
+  "success": true,
+  "data": {
+    "chat_id": 672621804,
+    "user_info": {
+      "user_id": 672621804,
+      "username": "nickly24",
+      "name": "Nikolay Pribysh",
+      "created_at": "2025-10-09T22:38:23.025809"
+    },
+    "status": "student",
+    "status_name": "Студент",
+    "messages": [
+      {
+        "_id": "67068f4a1234567890abcdef",
+        "chat_id": 672621804,
+        "text": "Привет!",
+        "timestamp": "2025-10-09T12:05:00.000000",
+        "from_user": true,
+        "is_read": false,
+        "message_id": 42
+      },
+      {
+        "_id": "67068f4a1234567890abcdeg",
+        "chat_id": 672621804,
+        "text": "Здравствуйте! Чем помочь?",
+        "timestamp": "2025-10-09T12:10:00.000000",
+        "from_user": false,
+        "is_read": true,
+        "admin_name": "Менеджер"
+      }
+    ],
+    "unread_count": 1
+  }
+}
+
+POST /api/chats/<chat_id>/send
+Описание: Отправить сообщение клиенту
+Параметры: chat_id (integer) - ID чата
+Тело запроса:
+{
+  "message": "Текст сообщения",
+  "admin_name": "Имя администратора"  // опционально
+}
+Ответ:
+{
+  "success": true,
+  "message": "Сообщение отправлено успешно"
+}
+
+POST /api/chats/<chat_id>/mark-read
+Описание: Пометить все сообщения клиента как прочитанные
+Параметры: chat_id (integer) - ID чата
+Тело запроса: не требуется
+Ответ:
+{
+  "success": true,
+  "message": "Помечено как прочитано: 2 сообщений",
+  "marked_count": 2
+}
+
+------------------------
+2.3. РАБОТА С ПОЛЬЗОВАТЕЛЯМИ
+------------------------
+
+GET /api/chats/<chat_id>/user
+Описание: Получить информацию о пользователе
+Параметры: chat_id (integer) - ID чата
+Ответ:
+{
+  "success": true,
+  "data": {
+    "chat_id": 672621804,
+    "user_id": 672621804,
+    "username": "nickly24",
+    "first_name": "Nikolay",
+    "last_name": "Pribysh",
+    "name": "Nikolay Pribysh",
+    "status": "student",
+    "status_name": "Студент",
+    "created_at": "2025-10-09T22:38:23.025809",
+    "updated_at": "2025-10-09T22:40:55.500979"
+  }
+}
+
+PUT /api/chats/<chat_id>/name
+Описание: Обновить имя пользователя (для внутренних нужд)
+Параметры: chat_id (integer) - ID чата
+Тело запроса:
+{
+  "name": "Новое имя"
+}
+Ответ:
+{
+  "success": true,
+  "message": "Имя пользователя обновлено успешно"
+}
+
+GET /api/chats/<chat_id>/status
+Описание: Получить статус пользователя
+Параметры: chat_id (integer) - ID чата
+Ответ:
+{
+  "success": true,
+  "data": {
+    "chat_id": 672621804,
+    "status": "student",
+    "status_name": "Студент"
+  }
+}
+
+PUT /api/chats/<chat_id>/status
+Описание: Изменить статус пользователя
+Параметры: chat_id (integer) - ID чата
+Тело запроса:
+{
+  "status": "applicant"  // student, applicant, parent_student, parent_applicant
+}
+Ответ:
+{
+  "success": true,
+  "message": "Статус пользователя обновлен успешно",
+  "status_name": "Абитуриент"
+}
+
+------------------------
+2.4. МАССОВАЯ РАССЫЛКА
+------------------------
+
+POST /api/broadcast
+Описание: Массовая рассылка сообщений по группам
+Параметры: нет
+Тело запроса:
+{
+  "message": "Текст рассылки",
+  "statuses": ["student", "applicant"],  // опционально, если не указано - всем
+  "admin_name": "Имя отправителя"       // опционально
+}
+Ответ:
+{
+  "success": true,
+  "message": "Рассылка завершена",
+  "stats": {
+    "total_target": 25,
+    "success": 24,
+    "failed": 1,
+    "failed_chats": [123456789]
+  }
+}
+
+================================================================================
+3. ТЕХНИЧЕСКОЕ ЗАДАНИЕ ДЛЯ АДМИНКИ
+================================================================================
+
+------------------------
+3.1. СТРУКТУРА СТРАНИЦ
+------------------------
+
+ГЛАВНАЯ СТРАНИЦА (/)
+┌─────────────────────────────────────────────────────────────┐
+│ [HEADER] Telegram Bot Admin Panel                          │
+├──────────────┬──────────────────────────────────────────────┤
+│              │                                              │
+│  SIDEBAR     │  MAIN CONTENT                                │
+│              │                                              │
+│  - Dashboard │  - Список чатов / Окно чата                  │
+│  - Чаты      │  - или Дашборд со статистикой                │
+│  - Рассылка  │  - или Форма рассылки                        │
+│              │                                              │
+└──────────────┴──────────────────────────────────────────────┘
+
+------------------------
+3.2. ОСНОВНЫЕ КОМПОНЕНТЫ
+------------------------
+
+КОМПОНЕНТ 1: Dashboard (Дашборд)
+Отображает:
+- Общее количество чатов
+- Количество непрочитанных сообщений
+- Статистику по статусам (круговая диаграмма)
+- Последние активные чаты
+
+API: GET /api/stats
+Обновление: каждые 30 секунд
+
+КОМПОНЕНТ 2: ChatList (Список чатов)
+Отображает:
+- Список всех чатов
+- Имя пользователя
+- Статус клиента (бейдж)
+- Последнее сообщение
+- Время последнего сообщения
+- Счетчик непрочитанных (badge)
+
+Функции:
+- Поиск по имени
+- Фильтр по статусу
+- Сортировка (по времени, по непрочитанным)
+- Клик открывает ChatWindow
+
+API: GET /api/chats
+Обновление: каждые 5 секунд
+
+КОМПОНЕНТ 3: ChatWindow (Окно чата)
+Отображает:
+- Информацию о пользователе (имя, username, статус)
+- Историю сообщений
+- Индикатор "непрочитано" для сообщений клиента
+- Поле ввода для ответа
+
+Функции:
+- Автоскролл к последнему сообщению
+- Автоматическая пометка как прочитанное при открытии
+- Отправка сообщений
+- Изменение статуса пользователя (dropdown)
+
+API: 
+- GET /api/chats/<chat_id> - загрузка истории (каждые 3 сек)
+- POST /api/chats/<chat_id>/send - отправка сообщения
+- POST /api/chats/<chat_id>/mark-read - пометка прочитанным
+- PUT /api/chats/<chat_id>/status - смена статуса
+
+КОМПОНЕНТ 4: BroadcastForm (Форма рассылки)
+Отображает:
+- Текстовое поле для сообщения
+- Чекбоксы для выбора групп (студенты, абитуриенты и т.д.)
+- Поле для имени отправителя
+- Кнопка "Отправить рассылку"
+- Результат рассылки (успешно/ошибки)
+
+Функции:
+- Выбор целевых групп
+- Отправка рассылки
+- Отображение статистики отправки
+
+API: POST /api/broadcast
+
+------------------------
+3.3. ОБЯЗАТЕЛЬНЫЕ ФУНКЦИИ
+------------------------
+
+1. АВТООБНОВЛЕНИЕ
+   - Список чатов: каждые 5 секунд
+   - История чата: каждые 3 секунды
+   - Дашборд: каждые 30 секунд
+
+2. УВЕДОМЛЕНИЯ
+   - Звуковое уведомление при новом сообщении
+   - Browser notification API
+   - Всплывающее уведомление в углу
+
+3. СТАТУС ПРОЧИТАННОСТИ
+   - При открытии чата автоматически вызывать mark-read
+   - Визуальное отображение непрочитанных сообщений
+   - Счетчик непрочитанных в списке чатов
+
+4. ФИЛЬТРАЦИЯ И ПОИСК
+   - Поиск по имени пользователя
+   - Фильтр по статусу клиента
+   - Фильтр по непрочитанным
+
+5. ВАЛИДАЦИЯ
+   - Проверка пустых сообщений
+   - Проверка выбора статуса при изменении
+   - Подтверждение перед массовой рассылкой
+
+------------------------
+3.4. ДОПОЛНИТЕЛЬНЫЕ ФИЧИ (опционально)
+------------------------
+
+- Экспорт истории чата в PDF/TXT
+- Шаблоны быстрых ответов
+- Статистика по времени ответа
+- Тёмная/светлая тема
+- Markdown в сообщениях
+
+================================================================================
+4. СТРУКТУРА ДАННЫХ
+================================================================================
+
+------------------------
+4.1. ТИПЫ ДАННЫХ (TypeScript)
+------------------------
+
+// Статусы клиентов
+type ClientStatus = 'student' | 'applicant' | 'parent_student' | 'parent_applicant';
+
+// Информация о пользователе
+interface UserInfo {
+  user_id: number;
+  username: string;
+  name: string;
+  created_at: string;
+}
+
+// Чат
+interface Chat {
+  chat_id: number;
+  user_info: UserInfo;
+  status: ClientStatus | null;
+  last_message: {
+    text: string;
+    timestamp: string;
+    from_user: boolean;
+  } | null;
+  unread_count: number;
+  updated_at: string;
+}
+
+// Сообщение
+interface Message {
+  _id: string;
+  chat_id: number;
+  text: string;
+  timestamp: string;
+  from_user: boolean;
+  is_read: boolean;
+  message_id?: number;
+  admin_name?: string;
+}
+
+// Полная информация о чате
+interface ChatDetail {
+  chat_id: number;
+  user_info: UserInfo;
+  status: ClientStatus | null;
+  status_name: string | null;
+  messages: Message[];
+  unread_count: number;
+}
+
+// Статистика
+interface Statistics {
+  total_chats: number;
+  total_unread_messages: number;
+  status_distribution: Record<ClientStatus, number>;
+}
+
+// Ответ API
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
+------------------------
+4.2. КОНСТАНТЫ
+------------------------
+
+// Статусы клиентов
+export const CLIENT_STATUSES = {
+  student: 'Студент',
+  applicant: 'Абитуриент',
+  parent_student: 'Родитель студента',
+  parent_applicant: 'Родитель абитуриента'
+};
+
+// Цвета для статусов
+export const STATUS_COLORS = {
+  student: '#4CAF50',
+  applicant: '#2196F3',
+  parent_student: '#FF9800',
+  parent_applicant: '#9C27B0'
+};
+
+// Интервалы обновления (мс)
+export const UPDATE_INTERVALS = {
+  CHAT_LIST: 5000,
+  CHAT_HISTORY: 3000,
+  DASHBOARD: 30000
+};
+
+================================================================================
+5. ПРИМЕРЫ REACT КОМПОНЕНТОВ
+================================================================================
+
+------------------------
+5.1. API КЛИЕНТ
+------------------------
+
+// api/client.js
+const API_BASE_URL = 'http://0.0.0.0:80/api';
+
+class ApiClient {
+  async request(endpoint, options = {}) {
+    const url = `${API_BASE_URL}${endpoint}`;
+    const config = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    };
+
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || 'API Error');
+    }
+
+    return data;
+  }
+
+  // Чаты
+  getChats() {
+    return this.request('/chats');
+  }
+
+  getChatHistory(chatId) {
+    return this.request(`/chats/${chatId}`);
+  }
+
+  sendMessage(chatId, message, adminName = 'Администратор') {
+    return this.request(`/chats/${chatId}/send`, {
+      method: 'POST',
+      body: JSON.stringify({ message, admin_name: adminName }),
+    });
+  }
+
+  markAsRead(chatId) {
+    return this.request(`/chats/${chatId}/mark-read`, {
+      method: 'POST',
+    });
+  }
+
+  // Статусы
+  getStatuses() {
+    return this.request('/statuses');
+  }
+
+  updateStatus(chatId, status) {
+    return this.request(`/chats/${chatId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  // Рассылка
+  sendBroadcast(message, statuses = null, adminName = 'Администратор') {
+    const body = { message, admin_name: adminName };
+    if (statuses) body.statuses = statuses;
+    
+    return this.request('/broadcast', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
+  // Статистика
+  getStats() {
+    return this.request('/stats');
+  }
+}
+
+export const apiClient = new ApiClient();
+
+------------------------
+5.2. ХУК ДЛЯ ЧАТОВ
+------------------------
+
+// hooks/useChats.js
+import { useState, useEffect } from 'react';
+import { apiClient } from '../api/client';
+
+export const useChats = () => {
+  const [chats, setChats] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchChats = async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.getChats();
+      setChats(response.data);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchChats();
+    
+    // Автообновление каждые 5 секунд
+    const interval = setInterval(fetchChats, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return { chats, loading, error, refetch: fetchChats };
+};
+
+------------------------
+5.3. КОМПОНЕНТ СПИСКА ЧАТОВ
+------------------------
+
+// components/ChatList.jsx
+import React from 'react';
+import { useChats } from '../hooks/useChats';
+
+const ChatList = ({ onSelectChat, selectedChatId }) => {
+  const { chats, loading, error } = useChats();
+
+  if (loading) return <div>Загрузка...</div>;
+  if (error) return <div>Ошибка: {error}</div>;
+
+  return (
+    <div className="chat-list">
+      <h2>Чаты ({chats.length})</h2>
+      {chats.map(chat => (
+        <div 
+          key={chat.chat_id}
+          className={`chat-item ${selectedChatId === chat.chat_id ? 'active' : ''}`}
+          onClick={() => onSelectChat(chat.chat_id)}
+        >
+          <div className="chat-header">
+            <span className="name">{chat.user_info?.name}</span>
+            <span className={`status-badge status-${chat.status}`}>
+              {chat.status || 'Нет статуса'}
+            </span>
+            {chat.unread_count > 0 && (
+              <span className="unread-badge">{chat.unread_count}</span>
+            )}
+          </div>
+          <div className="last-message">
+            {chat.last_message?.text || 'Нет сообщений'}
+          </div>
+          <div className="timestamp">
+            {new Date(chat.updated_at).toLocaleString()}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export default ChatList;
+
+------------------------
+5.4. КОМПОНЕНТ ОКНА ЧАТА
+------------------------
+
+// components/ChatWindow.jsx
+import React, { useState, useEffect, useRef } from 'react';
+import { apiClient } from '../api/client';
+
+const ChatWindow = ({ chatId }) => {
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [userInfo, setUserInfo] = useState(null);
+  const [status, setStatus] = useState(null);
+  const messagesEndRef = useRef(null);
+
+  const fetchHistory = async () => {
+    if (!chatId) return;
+    
+    const response = await apiClient.getChatHistory(chatId);
+    setMessages(response.data.messages);
+    setUserInfo(response.data.user_info);
+    setStatus(response.data.status);
+  };
+
+  useEffect(() => {
+    if (!chatId) return;
+    
+    // Загружаем историю
+    fetchHistory();
+    
+    // Помечаем как прочитанное
+    apiClient.markAsRead(chatId);
+    
+    // Автообновление каждые 3 секунды
+    const interval = setInterval(fetchHistory, 3000);
+    return () => clearInterval(interval);
+  }, [chatId]);
+
+  useEffect(() => {
+    // Автоскролл к последнему сообщению
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSend = async (e) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+
+    await apiClient.sendMessage(chatId, newMessage);
+    setNewMessage('');
+    fetchHistory();
+  };
+
+  if (!chatId) return <div>Выберите чат</div>;
+
+  return (
+    <div className="chat-window">
+      <div className="chat-header">
+        <h3>{userInfo?.name}</h3>
+        <span className="username">@{userInfo?.username}</span>
+        <span className={`status-badge status-${status}`}>{status}</span>
+      </div>
+
+      <div className="messages">
+        {messages.map(msg => (
+          <div 
+            key={msg._id}
+            className={`message ${msg.from_user ? 'user' : 'admin'} ${!msg.is_read && msg.from_user ? 'unread' : ''}`}
+          >
+            <div className="message-header">
+              <span className="sender">
+                {msg.from_user ? userInfo?.name : msg.admin_name}
+              </span>
+              <span className="time">
+                {new Date(msg.timestamp).toLocaleTimeString()}
+              </span>
+            </div>
+            <div className="message-text">{msg.text}</div>
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+
+      <form onSubmit={handleSend} className="message-form">
+        <input
+          type="text"
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          placeholder="Введите сообщение..."
+        />
+        <button type="submit" disabled={!newMessage.trim()}>
+          Отправить
+        </button>
+      </form>
+    </div>
+  );
+};
+
+export default ChatWindow;
+
+------------------------
+5.5. КОМПОНЕНТ РАССЫЛКИ
+------------------------
+
+// components/BroadcastForm.jsx
+import React, { useState } from 'react';
+import { apiClient } from '../api/client';
+
+const STATUSES = [
+  { value: 'student', label: 'Студенты' },
+  { value: 'applicant', label: 'Абитуриенты' },
+  { value: 'parent_student', label: 'Родители студентов' },
+  { value: 'parent_applicant', label: 'Родители абитуриентов' }
+];
+
+const BroadcastForm = () => {
+  const [message, setMessage] = useState('');
+  const [selectedStatuses, setSelectedStatuses] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+
+  const handleSend = async () => {
+    if (!message.trim()) {
+      alert('Введите сообщение');
+      return;
+    }
+
+    if (!window.confirm('Отправить рассылку?')) return;
+
+    setLoading(true);
+    try {
+      const response = await apiClient.sendBroadcast(
+        message,
+        selectedStatuses.length > 0 ? selectedStatuses : null
+      );
+      setResult(response);
+      setMessage('');
+    } catch (error) {
+      alert('Ошибка: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleStatus = (status) => {
+    if (selectedStatuses.includes(status)) {
+      setSelectedStatuses(selectedStatuses.filter(s => s !== status));
+    } else {
+      setSelectedStatuses([...selectedStatuses, status]);
+    }
+  };
+
+  return (
+    <div className="broadcast-form">
+      <h2>Массовая рассылка</h2>
+
+      <div className="target-groups">
+        <h3>Кому отправить:</h3>
+        {STATUSES.map(status => (
+          <label key={status.value}>
+            <input
+              type="checkbox"
+              checked={selectedStatuses.includes(status.value)}
+              onChange={() => toggleStatus(status.value)}
+            />
+            {status.label}
+          </label>
+        ))}
+        {selectedStatuses.length === 0 && (
+          <p><em>Будет отправлено всем пользователям</em></p>
+        )}
+      </div>
+
+      <textarea
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="Текст сообщения..."
+        rows={5}
+      />
+
+      <button onClick={handleSend} disabled={loading || !message.trim()}>
+        {loading ? 'Отправка...' : 'Отправить рассылку'}
+      </button>
+
+      {result && (
+        <div className="result">
+          <h3>Результат рассылки:</h3>
+          <p>Отправлено: {result.stats.success} из {result.stats.total_target}</p>
+          <p>Ошибок: {result.stats.failed}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default BroadcastForm;
+
+================================================================================
+6. РЕКОМЕНДАЦИИ ПО РЕАЛИЗАЦИИ
+================================================================================
+
+------------------------
+6.1. АРХИТЕКТУРА ПРОЕКТА
+------------------------
+
+src/
+├── api/
+│   └── client.js           # API клиент
+├── components/
+│   ├── ChatList.jsx        # Список чатов
+│   ├── ChatWindow.jsx      # Окно чата
+│   ├── BroadcastForm.jsx   # Форма рассылки
+│   ├── Dashboard.jsx       # Дашборд со статистикой
+│   ├── Sidebar.jsx         # Боковое меню
+│   └── Header.jsx          # Шапка
+├── hooks/
+│   ├── useChats.js         # Хук для списка чатов
+│   ├── useChatHistory.js   # Хук для истории чата
+│   └── useStats.js         # Хук для статистики
+├── constants/
+│   └── statuses.js         # Константы статусов
+├── styles/
+│   └── main.css            # Стили
+├── App.jsx                 # Главный компонент
+└── index.js                # Точка входа
+
+------------------------
+6.2. ОБРАБОТКА ОШИБОК
+------------------------
+
+1. Всегда проверяйте response.success
+2. Показывайте понятные сообщения об ошибках пользователю
+3. Логируйте ошибки в console для отладки
+4. Предусмотрите fallback для сетевых ошибок
+
+Пример:
+try {
+  const response = await apiClient.sendMessage(chatId, message);
+  showSuccess('Сообщение отправлено');
+} catch (error) {
+  console.error('Ошибка:', error);
+  showError('Не удалось отправить сообщение');
+}
+
+------------------------
+6.3. ОПТИМИЗАЦИЯ
+------------------------
+
+1. Используйте React.memo для тяжелых компонентов
+2. Дебаунс для поиска (300-500мс)
+3. Виртуализация для длинных списков (react-window)
+4. Кэширование данных чатов в localStorage
+5. Ленивая загрузка компонентов (React.lazy)
+
+------------------------
+6.4. UX РЕКОМЕНДАЦИИ
+------------------------
+
+1. Показывайте индикаторы загрузки
+2. Плавные анимации при переключении чатов
+3. Звуковое уведомление при новом сообщении
+4. Подтверждение перед массовой рассылкой
+5. Автосохранение черновиков сообщений
+6. Отображение "печатает..." если можно
+
+------------------------
+6.5. БЕЗОПАСНОСТЬ
+------------------------
+
+1. Санитизация HTML в сообщениях (XSS защита)
+2. Валидация всех input полей
+3. Rate limiting для рассылок (не чаще 1 раз в минуту)
+4. Защита от CSRF атак
+5. HTTPS для production
+
+------------------------
+6.6. ТЕСТИРОВАНИЕ
+------------------------
+
+1. Unit тесты для API клиента (Jest)
+2. Компонентные тесты (React Testing Library)
+3. E2E тесты для критичных флоу (Cypress)
+4. Тестирование на разных браузерах
+5. Мобильная адаптивность
+
+================================================================================
+7. БЫСТРЫЙ СТАРТ
+================================================================================
+
+1. Создайте React проект:
+   npx create-react-app telegram-admin
+   cd telegram-admin
+
+2. Установите зависимости:
+   npm install
+
+3. Скопируйте примеры кода из раздела 5
+
+4. Настройте API_BASE_URL в api/client.js
+
+5. Запустите проект:
+   npm start
+
+6. Убедитесь, что backend API запущен на http://0.0.0.0:80
+
+================================================================================
+8. FAQ (ЧАСТО ЗАДАВАЕМЫЕ ВОПРОСЫ)
+================================================================================
+
+Q: Как часто обновлять список чатов?
+A: Каждые 5 секунд (UPDATE_INTERVALS.CHAT_LIST)
+
+Q: Нужна ли авторизация в API?
+A: В текущей версии нет. Для production добавьте JWT токены.
+
+Q: Как определить, что пришло новое сообщение?
+A: Сравнивайте unread_count при каждом обновлении списка чатов.
+
+Q: Можно ли отправлять Markdown в сообщениях?
+A: В текущей версии нет, только plain text.
+
+Q: Как обрабатывать offline режим?
+A: Показывайте баннер "Нет связи с сервером" и прекращайте автообновление.
+
+Q: Поддерживает ли API пагинацию?
+A: В текущей версии нет. Все сообщения возвращаются сразу.
+
+Q: Как узнать, печатает ли клиент сейчас?
+A: Telegram API не предоставляет эту информацию через бота.
+
+Q: Можно ли удалять сообщения?
+A: В текущей версии нет такой возможности.
+
+================================================================================
+КОНЕЦ ДОКУМЕНТАЦИИ
+================================================================================
+
+Версия: 2.0.0
+Дата: 09.10.2025
+Backend API: Python Flask
+Frontend: React.js
+
+Поддержка: см. README.md, API_DOCUMENTATION.md, ADMIN_FEATURES.md
+

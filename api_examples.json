@@ -1,0 +1,293 @@
+{
+  "health_check": {
+    "endpoint": "GET /api/health",
+    "response": {
+      "success": true,
+      "message": "API работает",
+      "timestamp": "2025-10-09T12:00:00.000000"
+    }
+  },
+  "get_chats": {
+    "endpoint": "GET /api/chats",
+    "response": {
+      "success": true,
+      "data": [
+        {
+          "chat_id": 123456789,
+          "user_info": {
+            "user_id": 123456789,
+            "username": "username",
+            "name": "Иван Петров",
+            "created_at": "2025-10-09T12:00:00.000000"
+          },
+          "status": "student",
+          "last_message": {
+            "text": "Привет! У меня вопрос по расписанию",
+            "timestamp": "2025-10-09T12:30:00.000000",
+            "from_user": true
+          },
+          "unread_count": 3,
+          "updated_at": "2025-10-09T12:30:00.000000"
+        },
+        {
+          "chat_id": 987654321,
+          "user_info": {
+            "user_id": 987654321,
+            "username": "parent123",
+            "name": "Мария Сидорова",
+            "created_at": "2025-10-08T10:00:00.000000"
+          },
+          "status": "parent_applicant",
+          "last_message": {
+            "text": "Спасибо за информацию!",
+            "timestamp": "2025-10-09T11:00:00.000000",
+            "from_user": false
+          },
+          "unread_count": 0,
+          "updated_at": "2025-10-09T11:00:00.000000"
+        }
+      ]
+    }
+  },
+  "get_chat_history": {
+    "endpoint": "GET /api/chats/123456789",
+    "response": {
+      "success": true,
+      "data": {
+        "chat_id": 123456789,
+        "user_info": {
+          "user_id": 123456789,
+          "username": "username",
+          "name": "Иван Петров",
+          "created_at": "2025-10-09T12:00:00.000000"
+        },
+        "status": "student",
+        "status_name": "Студент",
+        "messages": [
+          {
+            "_id": "67068f4a1234567890abcdef",
+            "chat_id": 123456789,
+            "text": "Привет! У меня вопрос",
+            "timestamp": "2025-10-09T12:05:00.000000",
+            "from_user": true,
+            "is_read": false,
+            "message_id": 42
+          },
+          {
+            "_id": "67068f4a1234567890abcdeg",
+            "chat_id": 123456789,
+            "text": "Здравствуйте! Слушаю вас",
+            "timestamp": "2025-10-09T12:06:00.000000",
+            "from_user": false,
+            "is_read": true,
+            "admin_name": "Менеджер"
+          },
+          {
+            "_id": "67068f4a1234567890abcdeh",
+            "chat_id": 123456789,
+            "text": "Когда будет экзамен?",
+            "timestamp": "2025-10-09T12:07:00.000000",
+            "from_user": true,
+            "is_read": false,
+            "message_id": 43
+          }
+        ],
+        "unread_count": 2
+      }
+    }
+  },
+  "send_message": {
+    "endpoint": "POST /api/chats/123456789/send",
+    "request": {
+      "message": "Экзамен состоится 15 октября в 10:00",
+      "admin_name": "Менеджер учебной части"
+    },
+    "response": {
+      "success": true,
+      "message": "Сообщение отправлено успешно"
+    }
+  },
+  "mark_as_read": {
+    "endpoint": "POST /api/chats/123456789/mark-read",
+    "request": {},
+    "response": {
+      "success": true,
+      "message": "Помечено как прочитано: 2 сообщений",
+      "marked_count": 2
+    }
+  },
+  "get_user_info": {
+    "endpoint": "GET /api/chats/123456789/user",
+    "response": {
+      "success": true,
+      "data": {
+        "_id": "67068f4a1234567890abcdef",
+        "chat_id": 123456789,
+        "user_id": 123456789,
+        "username": "username",
+        "first_name": "Иван",
+        "last_name": "Петров",
+        "name": "Иван Петров",
+        "status": "student",
+        "status_name": "Студент",
+        "created_at": "2025-10-09T12:00:00.000000",
+        "updated_at": "2025-10-09T12:30:00.000000"
+      }
+    }
+  },
+  "update_user_name": {
+    "endpoint": "PUT /api/chats/123456789/name",
+    "request": {
+      "name": "Иван Петров (Группа 101)"
+    },
+    "response": {
+      "success": true,
+      "message": "Имя пользователя обновлено успешно"
+    }
+  },
+  "get_statuses": {
+    "endpoint": "GET /api/statuses",
+    "response": {
+      "success": true,
+      "data": [
+        {
+          "value": "student",
+          "label": "Студент"
+        },
+        {
+          "value": "applicant",
+          "label": "Абитуриент"
+        },
+        {
+          "value": "parent_student",
+          "label": "Родитель студента"
+        },
+        {
+          "value": "parent_applicant",
+          "label": "Родитель абитуриента"
+        }
+      ]
+    }
+  },
+  "get_user_status": {
+    "endpoint": "GET /api/chats/123456789/status",
+    "response": {
+      "success": true,
+      "data": {
+        "chat_id": 123456789,
+        "status": "student",
+        "status_name": "Студент"
+      }
+    }
+  },
+  "update_user_status": {
+    "endpoint": "PUT /api/chats/123456789/status",
+    "request": {
+      "status": "applicant"
+    },
+    "response": {
+      "success": true,
+      "message": "Статус пользователя обновлен успешно",
+      "status_name": "Абитуриент"
+    }
+  },
+  "get_stats": {
+    "endpoint": "GET /api/stats",
+    "response": {
+      "success": true,
+      "data": {
+        "total_chats": 42,
+        "total_unread_messages": 15,
+        "status_distribution": {
+          "student": 20,
+          "applicant": 12,
+          "parent_student": 7,
+          "parent_applicant": 3
+        }
+      }
+    }
+  },
+  "error_examples": {
+    "missing_field": {
+      "endpoint": "POST /api/chats/123456789/send",
+      "request": {
+        "admin_name": "Администратор"
+      },
+      "response": {
+        "success": false,
+        "error": "Поле 'message' обязательно"
+      },
+      "status_code": 400
+    },
+    "empty_message": {
+      "endpoint": "POST /api/chats/123456789/send",
+      "request": {
+        "message": "   "
+      },
+      "response": {
+        "success": false,
+        "error": "Сообщение не может быть пустым"
+      },
+      "status_code": 400
+    },
+    "invalid_status": {
+      "endpoint": "PUT /api/chats/123456789/status",
+      "request": {
+        "status": "invalid_status"
+      },
+      "response": {
+        "success": false,
+        "error": "Недопустимый статус. Доступные: student, applicant, parent_student, parent_applicant"
+      },
+      "status_code": 400
+    },
+    "user_not_found": {
+      "endpoint": "GET /api/chats/999999999/user",
+      "response": {
+        "success": false,
+        "error": "Информация о пользователе не найдена"
+      },
+      "status_code": 404
+    },
+    "send_message_failed": {
+      "endpoint": "POST /api/chats/999999999/send",
+      "request": {
+        "message": "Тестовое сообщение"
+      },
+      "response": {
+        "success": false,
+        "error": "Не удалось отправить сообщение"
+      },
+      "status_code": 500
+    }
+  },
+  "status_options": {
+    "description": "Доступные статусы клиентов",
+    "statuses": [
+      {
+        "value": "student",
+        "label": "Студент",
+        "description": "Текущий студент учебного заведения",
+        "color": "#4CAF50"
+      },
+      {
+        "value": "applicant",
+        "label": "Абитуриент",
+        "description": "Будущий студент, абитуриент",
+        "color": "#2196F3"
+      },
+      {
+        "value": "parent_student",
+        "label": "Родитель студента",
+        "description": "Родитель текущего студента",
+        "color": "#FF9800"
+      },
+      {
+        "value": "parent_applicant",
+        "label": "Родитель абитуриента",
+        "description": "Родитель будущего студента",
+        "color": "#9C27B0"
+      }
+    ]
+  }
+}
