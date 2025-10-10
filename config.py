@@ -12,7 +12,7 @@ MONGO_AUTH_DB = os.getenv("MONGO_AUTH_DB", "admin")
 MONGO_DATABASE = os.getenv("MONGO_DATABASE", "chatbot")
 
 # Telegram Bot конфигурация
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "8327908006:AAG-aR5WnP34rwIwwk5cHNOgZJK9GDW4DCA")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "7483522507:AAEQtn1JcrnHckYrhYtCl1pM16E18vv81OE")
 
 # Flask конфигурация
 FLASK_HOST = os.getenv("FLASK_HOST", "0.0.0.0")
