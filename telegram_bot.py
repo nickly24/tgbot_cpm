@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+import httpx
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 from config import TELEGRAM_BOT_TOKEN, CLIENT_STATUSES
@@ -164,8 +165,39 @@ class TelegramBot:
         
         logger.info(f"Получено неподдерживаемое сообщение от пользователя {update.effective_chat.id}")
     
+    def send_message_sync(self, chat_id: int, message_text: str, admin_name: str = "Администратор"):
+        """Синхронная отправка сообщения пользователю (для вызова из API)"""
+        try:
+            # Отправляем сообщение напрямую через Telegram API
+            url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+            
+            with httpx.Client(timeout=30.0) as client:
+                response = client.post(url, json={
+                    "chat_id": chat_id,
+                    "text": f"📩 Сообщение от {admin_name}:\n\n{message_text}"
+                })
+                response.raise_for_status()
+            
+            # Сохраняем сообщение в базу данных
+            message_data = {
+                "text": message_text,
+                "timestamp": datetime.now().isoformat(),
+                "from_user": False,  # Сообщение от администратора
+                "admin_name": admin_name,
+                "is_read": True  # Сообщения от админа всегда "прочитаны"
+            }
+            
+            db.save_message(chat_id, message_data)
+            
+            logger.info(f"Отправлено сообщение пользователю {chat_id} от {admin_name}: {message_text}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Ошибка отправки сообщения пользователю {chat_id}: {e}")
+            return False
+    
     async def send_message_to_user(self, chat_id: int, message_text: str, admin_name: str = "Администратор"):
-        """Отправка сообщения пользователю от имени администратора"""
+        """Асинхронная отправка сообщения пользователю (для внутреннего использования бота)"""
         try:
             # Отправляем сообщение пользователю
             await self.application.bot.send_message(
