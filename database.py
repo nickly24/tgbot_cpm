@@ -180,6 +180,23 @@ class Database:
             })
         
         return chats
+    
+    def delete_chat(self, chat_id):
+        """Удалить чат со всеми сообщениями"""
+        try:
+            # Удаляем пользователя
+            user_result = self.users.delete_one({"chat_id": chat_id})
+            
+            # Удаляем все сообщения
+            messages_result = self.messages.delete_many({"chat_id": chat_id})
+            
+            return {
+                "user_deleted": user_result.deleted_count > 0,
+                "messages_deleted": messages_result.deleted_count
+            }
+        except Exception as e:
+            print(f"Ошибка удаления чата {chat_id}: {e}")
+            return None
 
 # Глобальный экземпляр базы данных
 db = Database()

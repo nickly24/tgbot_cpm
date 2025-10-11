@@ -71,6 +71,42 @@ def get_chat_history(chat_id):
             "error": str(e)
         }), 500
 
+@api_bp.route('/chats/<int:chat_id>', methods=['DELETE'])
+def delete_chat(chat_id):
+    """Удалить чат со всеми сообщениями"""
+    try:
+        # Проверяем, существует ли чат
+        user = db.get_user(chat_id)
+        if not user:
+            return jsonify({
+                "success": False,
+                "error": "Чат не найден"
+            }), 404
+        
+        # Удаляем чат
+        result = db.delete_chat(chat_id)
+        
+        if result is None:
+            return jsonify({
+                "success": False,
+                "error": "Ошибка при удалении чата"
+            }), 500
+        
+        return jsonify({
+            "success": True,
+            "message": "Чат успешно удален",
+            "deleted": {
+                "user": result["user_deleted"],
+                "messages_count": result["messages_deleted"]
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
 # ==================== СООБЩЕНИЯ ====================
 
 @api_bp.route('/chats/<int:chat_id>/send', methods=['POST'])

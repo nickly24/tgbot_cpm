@@ -1,0 +1,406 @@
+═══════════════════════════════════════════════════════════════════
+    TELEGRAM BOT API - НОВЫЕ РОУТЫ v2.1
+    Дата: 11.10.2025
+═══════════════════════════════════════════════════════════════════
+
+БАЗОВЫЙ URL: http://109.73.202.73:80/api
+
+
+═══════════════════════════════════════════════════════════════════
+📝 1. РЕДАКТИРОВАНИЕ ИМЕНИ ПОЛЬЗОВАТЕЛЯ (УЛУЧШЕНО)
+═══════════════════════════════════════════════════════════════════
+
+Endpoint: PUT /api/chats/<chat_id>/name
+
+Описание: Обновить имя пользователя в чате
+
+Параметры URL:
+  - chat_id (integer) - ID чата пользователя
+
+Тело запроса (JSON):
+  {
+    "name": "Новое Имя"  // обязательно, не может быть пустым
+  }
+
+Пример запроса:
+  PUT http://109.73.202.73:80/api/chats/123456789/name
+  Content-Type: application/json
+  
+  {
+    "name": "Иван Петров"
+  }
+
+Успешный ответ (200):
+  {
+    "success": true,
+    "message": "Имя пользователя обновлено успешно",
+    "new_name": "Иван Петров"
+  }
+
+Возможные ошибки:
+  
+  404 Not Found - Пользователь не найден
+  {
+    "success": false,
+    "error": "Пользователь не найден"
+  }
+  
+  400 Bad Request - Поле name отсутствует или пустое
+  {
+    "success": false,
+    "error": "Поле 'name' обязательно"
+  }
+  
+  400 Bad Request - Имя пустое (пробелы)
+  {
+    "success": false,
+    "error": "Имя не может быть пустым"
+  }
+
+
+═══════════════════════════════════════════════════════════════════
+🗑️ 2. УДАЛЕНИЕ ЧАТА (НОВОЕ)
+═══════════════════════════════════════════════════════════════════
+
+Endpoint: DELETE /api/chats/<chat_id>
+
+Описание: Полное удаление чата со всеми сообщениями
+
+Параметры URL:
+  - chat_id (integer) - ID чата для удаления
+
+Тело запроса: не требуется
+
+Пример запроса:
+  DELETE http://109.73.202.73:80/api/chats/123456789
+
+Успешный ответ (200):
+  {
+    "success": true,
+    "message": "Чат успешно удален",
+    "deleted": {
+      "user": true,                // был ли удален пользователь
+      "messages_count": 42         // количество удаленных сообщений
+    }
+  }
+
+Возможные ошибки:
+  
+  404 Not Found - Чат не найден
+  {
+    "success": false,
+    "error": "Чат не найден"
+  }
+  
+  500 Internal Server Error - Ошибка при удалении
+  {
+    "success": false,
+    "error": "Ошибка при удалении чата"
+  }
+
+⚠️ ВАЖНО:
+  - Операция необратима
+  - Удаляет пользователя из БД
+  - Удаляет ВСЕ сообщения этого чата
+  - Рекомендуется добавить подтверждение в UI
+
+
+═══════════════════════════════════════════════════════════════════
+📋 ПОЛНЫЙ СПИСОК ВСЕХ РОУТОВ
+═══════════════════════════════════════════════════════════════════
+
+ЧАТЫ:
+  GET    /api/chats                        - Список всех чатов
+  GET    /api/chats/<chat_id>              - История конкретного чата
+  DELETE /api/chats/<chat_id>              - Удалить чат (НОВОЕ v2.1)
+
+СООБЩЕНИЯ:
+  POST   /api/chats/<chat_id>/send         - Отправить сообщение
+  POST   /api/chats/<chat_id>/mark-read    - Пометить как прочитанное
+
+ПОЛЬЗОВАТЕЛИ:
+  GET    /api/chats/<chat_id>/user         - Информация о пользователе
+  PUT    /api/chats/<chat_id>/name         - Обновить имя (УЛУЧШЕНО v2.1)
+
+СТАТУСЫ:
+  GET    /api/chats/<chat_id>/status       - Получить статус
+  PUT    /api/chats/<chat_id>/status       - Обновить статус
+  GET    /api/statuses                     - Список всех статусов
+
+РАССЫЛКА:
+  POST   /api/broadcast                    - Массовая рассылка
+
+СЛУЖЕБНЫЕ:
+  GET    /api/stats                        - Общая статистика
+  GET    /api/health                       - Проверка состояния
+
+
+═══════════════════════════════════════════════════════════════════
+📊 ИЗМЕНЕНИЯ В ДАННЫХ
+═══════════════════════════════════════════════════════════════════
+
+Поле "name" в пользователе:
+  - РАНЬШЕ: Бралось из Telegram профиля (first_name + last_name)
+  - СЕЙЧАС: Вводится пользователем при первом контакте с ботом
+  - Может быть изменено через API
+
+Новый флоу регистрации пользователя в боте:
+  1. /start
+  2. Пользователь вводит своё имя
+  3. Пользователь выбирает статус (студент/абитуриент/родитель)
+  4. Готово - может писать сообщения
+
+
+═══════════════════════════════════════════════════════════════════
+💻 ПРИМЕРЫ КОДА ДЛЯ ФРОНТЕНДА
+═══════════════════════════════════════════════════════════════════
+
+JavaScript/Fetch:
+
+// Редактирование имени
+async function updateUserName(chatId, newName) {
+  const response = await fetch(`http://109.73.202.73:80/api/chats/${chatId}/name`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: newName })
+  });
+  return await response.json();
+}
+
+// Удаление чата
+async function deleteChat(chatId) {
+  const response = await fetch(`http://109.73.202.73:80/api/chats/${chatId}`, {
+    method: 'DELETE'
+  });
+  return await response.json();
+}
+
+// Использование
+try {
+  // Изменить имя
+  const result = await updateUserName(123456789, "Новое Имя");
+  if (result.success) {
+    console.log('Имя изменено:', result.new_name);
+  }
+  
+  // Удалить чат (с подтверждением)
+  if (confirm('Удалить чат? Это действие нельзя отменить!')) {
+    const result = await deleteChat(123456789);
+    if (result.success) {
+      console.log(`Удалено ${result.deleted.messages_count} сообщений`);
+    }
+  }
+} catch (error) {
+  console.error('Ошибка:', error);
+}
+
+
+Axios:
+
+// Редактирование имени
+const updateUserName = async (chatId, newName) => {
+  try {
+    const { data } = await axios.put(
+      `http://109.73.202.73:80/api/chats/${chatId}/name`,
+      { name: newName }
+    );
+    return data;
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// Удаление чата
+const deleteChat = async (chatId) => {
+  try {
+    const { data } = await axios.delete(
+      `http://109.73.202.73:80/api/chats/${chatId}`
+    );
+    return data;
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    throw error;
+  }
+};
+
+
+═══════════════════════════════════════════════════════════════════
+🎨 РЕКОМЕНДАЦИИ ДЛЯ UI
+═══════════════════════════════════════════════════════════════════
+
+1. РЕДАКТИРОВАНИЕ ИМЕНИ:
+   ✓ Показывать текущее имя в поле ввода
+   ✓ Кнопка "Сохранить" / "Отмена"
+   ✓ Показать toast/notification после успешного сохранения
+   ✓ Trim пробелов перед отправкой
+   ✓ Валидация на пустую строку на фронте
+
+2. УДАЛЕНИЕ ЧАТА:
+   ✓ ОБЯЗАТЕЛЬНО модальное окно с подтверждением
+   ✓ Показать сколько сообщений будет удалено
+   ✓ Кнопка красного цвета с предупреждающей иконкой
+   ✓ Текст: "Это действие необратимо"
+   ✓ После удаления - убрать чат из списка
+
+3. ОБРАБОТКА ОШИБОК:
+   ✓ 404 - "Пользователь не найден"
+   ✓ 400 - Показать текст ошибки из response.error
+   ✓ 500 - "Произошла ошибка сервера"
+
+
+═══════════════════════════════════════════════════════════════════
+📱 ПРИМЕР КОМПОНЕНТОВ REACT
+═══════════════════════════════════════════════════════════════════
+
+// Форма редактирования имени
+function EditNameForm({ chatId, currentName, onUpdate }) {
+  const [name, setName] = useState(currentName);
+  const [loading, setLoading] = useState(false);
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      alert('Имя не может быть пустым');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const result = await updateUserName(chatId, name.trim());
+      if (result.success) {
+        onUpdate(result.new_name);
+        alert('Имя обновлено!');
+      }
+    } catch (error) {
+      alert('Ошибка обновления имени');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      <input 
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Введите имя"
+      />
+      <button type="submit" disabled={loading}>
+        {loading ? 'Сохранение...' : 'Сохранить'}
+      </button>
+    </form>
+  );
+}
+
+// Кнопка удаления чата
+function DeleteChatButton({ chatId, userName, messagesCount, onDelete }) {
+  const [showModal, setShowModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const result = await deleteChat(chatId);
+      if (result.success) {
+        onDelete(chatId);
+        setShowModal(false);
+        alert(`Чат удален (${result.deleted.messages_count} сообщений)`);
+      }
+    } catch (error) {
+      alert('Ошибка удаления');
+    } finally {
+      setDeleting(false);
+    }
+  };
+  
+  return (
+    <>
+      <button 
+        onClick={() => setShowModal(true)}
+        className="btn-danger"
+      >
+        🗑️ Удалить чат
+      </button>
+      
+      {showModal && (
+        <Modal>
+          <h3>⚠️ Удалить чат?</h3>
+          <p>Пользователь: <strong>{userName}</strong></p>
+          <p>Сообщений: <strong>{messagesCount}</strong></p>
+          <p className="warning">
+            Это действие нельзя отменить!
+          </p>
+          <button 
+            onClick={handleDelete}
+            disabled={deleting}
+            className="btn-danger"
+          >
+            {deleting ? 'Удаление...' : 'Да, удалить'}
+          </button>
+          <button onClick={() => setShowModal(false)}>
+            Отмена
+          </button>
+        </Modal>
+      )}
+    </>
+  );
+}
+
+
+═══════════════════════════════════════════════════════════════════
+✅ CHECKLIST ДЛЯ ФРОНТЕНД РАЗРАБОТЧИКА
+═══════════════════════════════════════════════════════════════════
+
+РЕДАКТИРОВАНИЕ ИМЕНИ:
+  [ ] Форма/модалка для редактирования
+  [ ] Показ текущего имени
+  [ ] Валидация на пустую строку
+  [ ] Trim пробелов перед отправкой
+  [ ] Обработка ошибок 404/400/500
+  [ ] Toast/notification при успехе
+  [ ] Обновление UI после изменения
+  [ ] Loading state при сохранении
+
+УДАЛЕНИЕ ЧАТА:
+  [ ] Кнопка удаления (красная, с иконкой)
+  [ ] Модальное окно подтверждения
+  [ ] Показ информации (имя, кол-во сообщений)
+  [ ] Текст предупреждения "необратимо"
+  [ ] Двойное подтверждение
+  [ ] Обработка ошибок 404/500
+  [ ] Удаление из списка после успеха
+  [ ] Loading state при удалении
+  [ ] Disable кнопок во время операции
+
+ОБЩЕЕ:
+  [ ] Обновить типы TypeScript (если используется)
+  [ ] Добавить новые endpoints в API клиент
+  [ ] Протестировать оба роута
+  [ ] Проверить на мобильных устройствах
+
+
+═══════════════════════════════════════════════════════════════════
+🔗 ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ
+═══════════════════════════════════════════════════════════════════
+
+Полная документация: см. файл API_DOCUMENTATION.md
+
+Примеры для React: см. файл REACT_EXAMPLES.md
+
+Новые функции v2.1: см. файл NEW_FEATURES_v2.1.md
+
+Технические детали: см. файл BROADCAST_FIX.md
+
+
+═══════════════════════════════════════════════════════════════════
+📞 КОНТАКТЫ
+═══════════════════════════════════════════════════════════════════
+
+Вопросы по API: обратитесь к backend разработчику
+
+Версия API: 2.1.0
+Дата релиза: 11.10.2025
+
+═══════════════════════════════════════════════════════════════════
+

@@ -16,18 +16,19 @@ def index():
     """Главная страница"""
     return jsonify({
         "message": "Telegram Bot API Server",
-        "version": "2.0.0",
+        "version": "2.1.0",
         "endpoints": {
             "GET /api/chats": "Получить список всех чатов",
             "GET /api/chats/<chat_id>": "Получить историю конкретного чата",
+            "DELETE /api/chats/<chat_id>": "Удалить чат со всеми сообщениями 🆕",
             "POST /api/chats/<chat_id>/send": "Отправить сообщение в чат",
-            "POST /api/chats/<chat_id>/mark-read": "Пометить сообщения как прочитанные ⭐",
+            "POST /api/chats/<chat_id>/mark-read": "Пометить сообщения как прочитанные",
             "GET /api/chats/<chat_id>/user": "Получить информацию о пользователе",
-            "PUT /api/chats/<chat_id>/name": "Обновить имя пользователя",
+            "PUT /api/chats/<chat_id>/name": "Обновить имя пользователя ⭐",
             "GET /api/chats/<chat_id>/status": "Получить статус пользователя",
-            "PUT /api/chats/<chat_id>/status": "Обновить статус пользователя ⭐",
+            "PUT /api/chats/<chat_id>/status": "Обновить статус пользователя",
             "GET /api/statuses": "Получить список всех статусов",
-            "POST /api/broadcast": "Массовая рассылка по статусам 🆕",
+            "POST /api/broadcast": "Массовая рассылка по статусам",
             "GET /api/stats": "Получить общую статистику",
             "GET /api/health": "Проверка состояния API"
         }

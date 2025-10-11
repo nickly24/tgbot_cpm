@@ -57,16 +57,17 @@ class TelegramBot:
         # Проверяем, есть ли уже пользователь в БД
         existing_user = db.get_user(chat_id)
         
-        if existing_user and existing_user.get("status"):
-            # Пользователь уже выбрал статус
+        if existing_user and existing_user.get("status") and existing_user.get("name"):
+            # Пользователь уже прошел регистрацию
             welcome_message = (
-                f"С возвращением, {user.first_name}! 👋\n\n"
+                f"С возвращением, {existing_user.get('name')}! 👋\n\n"
                 f"Ваш статус: {CLIENT_STATUSES.get(existing_user['status'], 'не указан')}\n\n"
                 f"Отправляйте мне текстовые сообщения, и я передам их администратору."
             )
             await update.message.reply_text(welcome_message)
         else:
-            # Новый пользователь - сохраняем базовую информацию
+            # Новый пользователь или не завершил регистрацию
+            # Сохраняем базовую информацию
             user_info = {
                 "user_id": user.id,
                 "username": user.username,
@@ -75,14 +76,13 @@ class TelegramBot:
             }
             db.save_user(chat_id, user_info, status=None)
             
-            # Просим выбрать статус
+            # Просим представиться
             welcome_message = (
-                f"Привет, {user.first_name}! 👋\n\n"
+                f"Привет! 👋\n\n"
                 f"Я бот для связи с администратором.\n\n"
-                f"Пожалуйста, выберите кто вы:"
+                f"Как мне вас называть? Напишите ваше имя:"
             )
-            keyboard = self.create_status_keyboard()
-            await update.message.reply_text(welcome_message, reply_markup=keyboard)
+            await update.message.reply_text(welcome_message)
     
     async def handle_status_selection(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Обработка выбора статуса через inline кнопки"""
@@ -125,10 +125,39 @@ class TelegramBot:
         chat_id = update.effective_chat.id
         message_text = update.message.text
         
-        # Проверяем, выбрал ли пользователь статус
+        # Проверяем статус пользователя
         existing_user = db.get_user(chat_id)
         
-        if not existing_user or not existing_user.get("status"):
+        # Если пользователь еще не ввел имя
+        if not existing_user or not existing_user.get("name"):
+            # Сохраняем введенное имя
+            success = db.update_user_name(chat_id, message_text.strip())
+            
+            if success or not existing_user:
+                # Если пользователя не было, создаем его
+                if not existing_user:
+                    user_info = {
+                        "user_id": user.id,
+                        "username": user.username,
+                        "first_name": user.first_name,
+                        "last_name": user.last_name,
+                    }
+                    db.save_user(chat_id, user_info, status=None)
+                    db.update_user_name(chat_id, message_text.strip())
+                
+                # Благодарим и предлагаем выбрать статус
+                confirmation_message = (
+                    f"Приятно познакомиться, {message_text.strip()}! 😊\n\n"
+                    f"Теперь выберите, кто вы:"
+                )
+                keyboard = self.create_status_keyboard()
+                await update.message.reply_text(confirmation_message, reply_markup=keyboard)
+                
+                logger.info(f"Пользователь {chat_id} представился как: {message_text.strip()}")
+            return
+        
+        # Если пользователь ввел имя, но еще не выбрал статус
+        if not existing_user.get("status"):
             # Пользователь еще не выбрал статус
             reminder_message = "⚠️ Пожалуйста, сначала выберите ваш статус с помощью кнопок выше."
             keyboard = self.create_status_keyboard()
