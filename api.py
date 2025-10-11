@@ -98,10 +98,13 @@ def send_message_to_chat(chat_id):
         import asyncio
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(
-            telegram_bot.send_message_to_user(chat_id, message_text, admin_name)
-        )
-        loop.close()
+        
+        try:
+            result = loop.run_until_complete(
+                telegram_bot.send_message_to_user(chat_id, message_text, admin_name)
+            )
+        finally:
+            loop.close()
         
         if result:
             return jsonify({
@@ -398,30 +401,39 @@ def broadcast_message():
         
         # Отправляем сообщения
         import asyncio
+        
+        # Создаем асинхронную функцию для отправки всех сообщений
+        async def send_all_messages():
+            """Отправляет сообщения всем пользователям параллельно"""
+            async def send_to_one_user(user):
+                """Отправка сообщения одному пользователю с обработкой ошибок"""
+                chat_id = user.get('chat_id')
+                try:
+                    result = await telegram_bot.send_message_to_user(chat_id, message_text, admin_name)
+                    return {"chat_id": chat_id, "success": bool(result), "error": None}
+                except Exception as e:
+                    print(f"Ошибка отправки в чат {chat_id}: {e}")
+                    return {"chat_id": chat_id, "success": False, "error": str(e)}
+            
+            # Параллельная отправка всем пользователям
+            results = await asyncio.gather(*[send_to_one_user(user) for user in target_users])
+            return results
+        
+        # Создаем и запускаем event loop
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         
-        success_count = 0
-        failed_count = 0
-        failed_chats = []
+        try:
+            # Выполняем все отправки
+            results = loop.run_until_complete(send_all_messages())
+        finally:
+            # Всегда закрываем loop
+            loop.close()
         
-        for user in target_users:
-            chat_id = user.get('chat_id')
-            try:
-                result = loop.run_until_complete(
-                    telegram_bot.send_message_to_user(chat_id, message_text, admin_name)
-                )
-                if result:
-                    success_count += 1
-                else:
-                    failed_count += 1
-                    failed_chats.append(chat_id)
-            except Exception as e:
-                failed_count += 1
-                failed_chats.append(chat_id)
-                print(f"Ошибка отправки в чат {chat_id}: {e}")
-        
-        loop.close()
+        # Подсчитываем результаты
+        success_count = sum(1 for r in results if r["success"])
+        failed_count = len(results) - success_count
+        failed_chats = [r["chat_id"] for r in results if not r["success"]]
         
         return jsonify({
             "success": True,

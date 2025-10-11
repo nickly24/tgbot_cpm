@@ -1003,3 +1003,12 @@ Frontend: React.js
 
 Поддержка: см. README.md, API_DOCUMENTATION.md, ADMIN_FEATURES.md
 
+
+
+
+git init
+git add .
+git commit -m "first commit"
+git branch -M main
+git remote add origin https://github.com/nickly24/tgbot_cpm.git
+git push -u origin main
