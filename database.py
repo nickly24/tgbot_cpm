@@ -41,7 +41,7 @@ class Database:
             "username": user_info.get("username"),
             "first_name": user_info.get("first_name"),
             "last_name": user_info.get("last_name"),
-            "name": f"{user_info.get('first_name', '')} {user_info.get('last_name', '')}".strip(),
+            # name НЕ заполняется автоматически - пользователь вводит сам
             "status": status,  # студент, абитуриент, родитель студента, родитель абитуриента
             "created_at": datetime.now().isoformat(),
             "updated_at": datetime.now().isoformat()
