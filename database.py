@@ -8,6 +8,7 @@ class Database:
         self.db = None
         self.users = None
         self.messages = None
+        self.config = None
         self.connect()
     
     def connect(self):
@@ -20,11 +21,13 @@ class Database:
             # Основные коллекции
             self.users = self.db['users']
             self.messages = self.db['messages']
+            self.config = self.db['config']
             
             # Создаем индексы для оптимизации
             self.users.create_index("chat_id", unique=True)
             self.messages.create_index([("chat_id", 1), ("timestamp", DESCENDING)])
             self.messages.create_index("is_read")
+            self.config.create_index("type", unique=True)
             
             print("✅ Успешное подключение к MongoDB")
         except Exception as e:
@@ -197,6 +200,188 @@ class Database:
         except Exception as e:
             print(f"Ошибка удаления чата {chat_id}: {e}")
             return None
+    
+    # ==================== КОНФИГУРАЦИЯ ====================
+    
+    def get_bot_messages(self):
+        """Получить все сообщения бота"""
+        config_doc = self.config.find_one({"type": "bot_messages"})
+        if config_doc:
+            return config_doc.get("messages", {})
+        return None
+    
+    def update_bot_messages(self, messages):
+        """Обновить сообщения бота"""
+        result = self.config.update_one(
+            {"type": "bot_messages"},
+            {
+                "$set": {
+                    "messages": messages,
+                    "updated_at": datetime.now().isoformat()
+                }
+            },
+            upsert=True
+        )
+        return result.matched_count > 0 or result.upserted_id is not None
+    
+    def get_bot_message(self, message_key):
+        """Получить конкретное сообщение бота по ключу"""
+        messages = self.get_bot_messages()
+        if messages:
+            return messages.get(message_key)
+        return None
+    
+    def update_bot_message(self, message_key, message_text):
+        """Обновить конкретное сообщение бота"""
+        result = self.config.update_one(
+            {"type": "bot_messages"},
+            {
+                "$set": {
+                    f"messages.{message_key}": message_text,
+                    "updated_at": datetime.now().isoformat()
+                }
+            }
+        )
+        return result.modified_count > 0
+    
+    def get_client_statuses(self):
+        """Получить все статусы клиентов"""
+        config_doc = self.config.find_one({"type": "client_statuses"})
+        if config_doc:
+            return config_doc.get("statuses", [])
+        return None
+    
+    def update_client_statuses(self, statuses):
+        """Обновить все статусы клиентов"""
+        result = self.config.update_one(
+            {"type": "client_statuses"},
+            {
+                "$set": {
+                    "statuses": statuses,
+                    "updated_at": datetime.now().isoformat()
+                }
+            },
+            upsert=True
+        )
+        return result.matched_count > 0 or result.upserted_id is not None
+    
+    def add_client_status(self, status_data):
+        """Добавить новый статус клиента"""
+        statuses = self.get_client_statuses()
+        if statuses is None:
+            statuses = []
+        
+        # Проверяем, не существует ли уже такой статус
+        if any(s.get("value") == status_data.get("value") for s in statuses):
+            return False
+        
+        statuses.append(status_data)
+        return self.update_client_statuses(statuses)
+    
+    def update_client_status(self, status_value, status_data):
+        """Обновить существующий статус"""
+        statuses = self.get_client_statuses()
+        if statuses is None:
+            return False
+        
+        for i, status in enumerate(statuses):
+            if status.get("value") == status_value:
+                # Проверяем, не системный ли это статус
+                if status.get("is_system", False):
+                    # Для системных статусов можно обновить только label и emoji
+                    statuses[i]["label"] = status_data.get("label", status["label"])
+                    statuses[i]["emoji"] = status_data.get("emoji", status.get("emoji", ""))
+                else:
+                    # Для не системных можно обновить всё кроме is_system
+                    statuses[i].update(status_data)
+                    statuses[i]["is_system"] = False  # Убеждаемся что не изменился
+                
+                statuses[i]["updated_at"] = datetime.now().isoformat()
+                return self.update_client_statuses(statuses)
+        
+        return False
+    
+    def delete_client_status(self, status_value):
+        """Удалить статус клиента (только не системные)"""
+        statuses = self.get_client_statuses()
+        if statuses is None:
+            return False
+        
+        for status in statuses:
+            if status.get("value") == status_value:
+                if status.get("is_system", False):
+                    return False  # Нельзя удалять системные статусы
+        
+        # Удаляем статус
+        statuses = [s for s in statuses if s.get("value") != status_value]
+        return self.update_client_statuses(statuses)
+    
+    def init_default_config(self):
+        """Инициализация конфигурации по умолчанию"""
+        # Проверяем, есть ли уже конфигурация
+        bot_messages = self.get_bot_messages()
+        if bot_messages is None:
+            # Создаем дефолтные сообщения
+            default_messages = {
+                "welcome": "Привет! 👋\n\nЯ бот для связи с администратором.\n\nКак мне вас называть? Напишите ваше имя:",
+                "ask_status": "Приятно познакомиться, {name}! 😊\n\nТеперь выберите, кто вы:",
+                "status_selected": "✅ Отлично! Вы выбрали статус: {status_name}\n\nТеперь можете отправлять мне текстовые сообщения, и я передам их администратору.",
+                "welcome_back": "С возвращением, {name}! 👋\n\nВаш статус: {status_name}\n\nОтправляйте мне текстовые сообщения, и я передам их администратору.",
+                "message_received": "✅ Ваше сообщение получено и передано администратору. Ожидайте ответа!",
+                "unsupported_message": "❌ Извините, я обрабатываю только текстовые сообщения. Пожалуйста, отправьте текст.",
+                "need_status": "⚠️ Пожалуйста, сначала выберите ваш статус с помощью кнопок выше.",
+                "admin_message_prefix": "📩 Сообщение от {admin_name}:\n\n"
+            }
+            self.update_bot_messages(default_messages)
+            print("✅ Инициализированы дефолтные сообщения бота")
+        
+        client_statuses = self.get_client_statuses()
+        if client_statuses is None:
+            # Создаем дефолтные статусы
+            default_statuses = [
+                {
+                    "value": "student",
+                    "label": "Студент",
+                    "emoji": "👨‍🎓",
+                    "is_system": True,
+                    "order": 0,
+                    "created_at": datetime.now().isoformat()
+                },
+                {
+                    "value": "reserve",
+                    "label": "Резерв",
+                    "emoji": "📝",
+                    "is_system": True,
+                    "order": 1,
+                    "created_at": datetime.now().isoformat()
+                },
+                {
+                    "value": "applicant",
+                    "label": "Абитуриент",
+                    "emoji": "🎓",
+                    "is_system": False,
+                    "order": 2,
+                    "created_at": datetime.now().isoformat()
+                },
+                {
+                    "value": "parent_student",
+                    "label": "Родитель студента",
+                    "emoji": "👨‍👦",
+                    "is_system": False,
+                    "order": 3,
+                    "created_at": datetime.now().isoformat()
+                },
+                {
+                    "value": "parent_applicant",
+                    "label": "Родитель абитуриента",
+                    "emoji": "👨‍👧",
+                    "is_system": False,
+                    "order": 4,
+                    "created_at": datetime.now().isoformat()
+                }
+            ]
+            self.update_client_statuses(default_statuses)
+            print("✅ Инициализированы дефолтные статусы клиентов")
 
 # Глобальный экземпляр базы данных
 db = Database()

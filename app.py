@@ -1,6 +1,6 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
-from config import FLASK_HOST, FLASK_PORT, FLASK_DEBUG, CLIENT_STATUSES
+from config import FLASK_HOST, FLASK_PORT, FLASK_DEBUG
 from api import api_bp
 from database import db
 
@@ -16,21 +16,32 @@ def index():
     """Главная страница"""
     return jsonify({
         "message": "Telegram Bot API Server",
-        "version": "2.1.0",
+        "version": "2.2.0",
         "endpoints": {
             "GET /api/chats": "Получить список всех чатов",
             "GET /api/chats/<chat_id>": "Получить историю конкретного чата",
-            "DELETE /api/chats/<chat_id>": "Удалить чат со всеми сообщениями 🆕",
+            "DELETE /api/chats/<chat_id>": "Удалить чат со всеми сообщениями",
             "POST /api/chats/<chat_id>/send": "Отправить сообщение в чат",
             "POST /api/chats/<chat_id>/mark-read": "Пометить сообщения как прочитанные",
             "GET /api/chats/<chat_id>/user": "Получить информацию о пользователе",
-            "PUT /api/chats/<chat_id>/name": "Обновить имя пользователя ⭐",
+            "PUT /api/chats/<chat_id>/name": "Обновить имя пользователя",
             "GET /api/chats/<chat_id>/status": "Получить статус пользователя",
             "PUT /api/chats/<chat_id>/status": "Обновить статус пользователя",
-            "GET /api/statuses": "Получить список всех статусов",
+            "GET /api/statuses": "Получить список всех статусов (упрощенный)",
             "POST /api/broadcast": "Массовая рассылка по статусам",
             "GET /api/stats": "Получить общую статистику",
-            "GET /api/health": "Проверка состояния API"
+            "GET /api/health": "Проверка состояния API",
+            "": "",
+            "🆕 НАСТРОЙКИ БОТА v2.2": "",
+            "GET /api/bot-messages": "Получить все сообщения бота 🆕",
+            "PUT /api/bot-messages": "Обновить все сообщения бота 🆕",
+            "GET /api/bot-messages/<key>": "Получить конкретное сообщение бота 🆕",
+            "PUT /api/bot-messages/<key>": "Обновить конкретное сообщение бота 🆕",
+            " ": "",
+            "GET /api/config/statuses": "Получить все статусы (полная информация) 🆕",
+            "POST /api/config/statuses": "Добавить новый статус 🆕",
+            "PUT /api/config/statuses/<value>": "Обновить статус 🆕",
+            "DELETE /api/config/statuses/<value>": "Удалить статус 🆕"
         }
     })
 
@@ -176,7 +187,7 @@ def api_docs():
                 }
             }
         },
-        "Available Statuses": CLIENT_STATUSES
+        "Available Statuses": "GET /api/config/statuses для получения актуального списка"
     })
 
 if __name__ == '__main__':
