@@ -6,7 +6,17 @@ from database import db
 
 # Создаем Flask приложение
 app = Flask(__name__)
-CORS(app)  # Включаем CORS для работы с фронтендом
+
+# Настройка CORS для работы с фронтендом
+CORS(app, 
+     origins=[
+         "https://tgbot-admin.cpm-lms.ru",
+         "http://localhost:3000",
+         "http://127.0.0.1:3000"
+     ],
+     allow_headers=["Content-Type", "Authorization"],
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+)
 
 # Регистрируем Blueprint для API
 app.register_blueprint(api_bp)

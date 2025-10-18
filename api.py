@@ -24,6 +24,24 @@ def get_client_statuses_dict():
 # Создаем Blueprint для API
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
+# Обработчик для CORS preflight запросов
+@api_bp.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = jsonify({})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add('Access-Control-Allow-Headers', "*")
+        response.headers.add('Access-Control-Allow-Methods', "*")
+        return response
+
+# Добавляем CORS заголовки ко всем ответам
+@api_bp.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
+
 # ==================== ЧАТЫ ====================
 
 @api_bp.route('/chats', methods=['GET'])
