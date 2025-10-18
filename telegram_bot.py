@@ -210,6 +210,8 @@ class TelegramBot:
                 
                 # Студент найден - берём ФИО с сервера
                 full_name = student_data.get('full_name', 'Студент')
+                login = student_data.get('login', '')
+                password = student_data.get('password', '')
                 
                 # Обновляем имя и статус
                 db.update_user_name(chat_id, full_name)
@@ -218,11 +220,21 @@ class TelegramBot:
                 client_statuses = self.get_client_statuses()
                 status_name = client_statuses.get(status, status)
                 
+                # Формируем сообщение с логином и паролем
                 confirmation_message = (
                     f"✅ Добро пожаловать, {full_name}!\n\n"
                     f"Вы успешно зарегистрированы как: {status_name}\n\n"
-                    f"Теперь можете отправлять мне текстовые сообщения, и я передам их администратору."
                 )
+                
+                # Добавляем логин и пароль, если они есть
+                if login and password:
+                    confirmation_message += (
+                        f"🔑 Ваши данные для входа:\n"
+                        f"Логин: {login}\n"
+                        f"Пароль: {password}\n\n"
+                    )
+                
+                confirmation_message += "Теперь можете отправлять мне текстовые сообщения, и я передам их администратору."
                 
                 await query.edit_message_text(text=confirmation_message)
                 logger.info(f"Студент {chat_id} (@{user.username}) зарегистрирован: {full_name} - {status}")
